@@ -51,7 +51,9 @@ def create_inspection(
     db.commit()
     db.refresh(inspection)
     return InspectionStatusOut(
-        inspection_id=inspection.inspection_uid, status=inspection.status
+        id=inspection.id,
+        inspection_uid=inspection.inspection_uid, 
+        status=inspection.status
     )
 
 
@@ -111,6 +113,61 @@ async def upload_media(
         "media_count": total,
         "status": inspection.status,
     }
+
+
+from pydantic import BaseModel
+class PresignedUrlRequest(BaseModel):
+    files_count: int
+    extension: str = "jpg"
+
+class PresignedUrlResponse(BaseModel):
+    urls: list[str]
+
+@router.post("/{inspection_id}/media/presigned-urls", response_model=PresignedUrlResponse)
+def get_upload_urls(
+    inspection_id: int,
+    request: PresignedUrlRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    inspection = (
+        db.query(Inspection)
+        .filter(Inspection.id == inspection_id, Inspection.user_id == current_user.id)
+        .first()
+    )
+    if not inspection:
+        raise HTTPException(status_code=404, detail="Inspection not found")
+
+    if inspection.status not in ("CREATED", "UPLOADING"):
+        raise HTTPException(status_code=400, detail="Inspection is not accepting uploads")
+
+    existing_count = db.query(Media).filter(Media.inspection_id == inspection.id).count()
+    if existing_count + request.files_count > settings.MAX_IMAGES_PER_INSPECTION:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Maximum {settings.MAX_IMAGES_PER_INSPECTION} images per inspection",
+        )
+
+    inspection.status = "UPLOADING"
+    urls = []
+
+    import uuid
+    for _ in range(request.files_count):
+        key = f"originals/{uuid.uuid4().hex}.{request.extension}"
+        
+        media = Media(
+            inspection_id=inspection.id,
+            type="image",
+            original_url=key,
+        )
+        db.add(media)
+        
+        url = storage.generate_presigned_upload_url(key)
+        urls.append(url)
+
+    db.commit()
+    return {"urls": urls}
+
 
 
 # ───────────────────────────────────────────────────────────
@@ -233,7 +290,7 @@ def list_inspections(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    q = db.query(Inspection)
+    q = db.query(Inspection).options(joinedload(Inspection.media))
 
     if decision:
         q = q.filter(Inspection.decision == decision.upper())

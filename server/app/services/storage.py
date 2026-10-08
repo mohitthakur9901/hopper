@@ -58,3 +58,12 @@ def get_presigned_url(key: str, expires_in: int = 3600) -> str:
         Params={"Bucket": settings.S3_BUCKET_NAME, "Key": key},
         ExpiresIn=expires_in,
     )
+
+def generate_presigned_upload_url(key: str, expires_in: int = 3600) -> str:
+    """Generate a presigned URL for uploading a stored object (PUT)."""
+    s3 = _get_s3_client()
+    return s3.generate_presigned_url(
+        "put_object",
+        Params={"Bucket": settings.S3_BUCKET_NAME, "Key": key},
+        ExpiresIn=expires_in,
+    )

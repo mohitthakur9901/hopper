@@ -10,6 +10,7 @@ from app.core.database import Base, engine
 from app.routers.auth import router as auth_router
 
 from app.routers.inspections import router as inspections_router, dashboard_router
+from app.routers.detection import router as detection_router
 
 # ── Logging ────────────────────────────────────────────────
 logging.basicConfig(
@@ -49,9 +50,9 @@ def create_app() -> FastAPI:
 
     # ── Register routers ──────────────────────────────────
     app.include_router(auth_router)
-
     app.include_router(inspections_router)
     app.include_router(dashboard_router)
+    app.include_router(detection_router)
 
     # ── Health check ──────────────────────────────────────
     @app.get("/health", tags=["Health"])

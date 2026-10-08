@@ -1,7 +1,7 @@
 """Pydantic schemas for Inspections, Media & Detections."""
 
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 # ── Detection ──────────────────────────────────────────────
@@ -29,6 +29,15 @@ class MediaOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @model_validator(mode="after")
+    def presign_urls(self) -> "MediaOut":
+        from app.services.storage import get_presigned_url
+        if self.original_url and not self.original_url.startswith("http"):
+            self.original_url = get_presigned_url(self.original_url)
+        if self.annotated_url and not self.annotated_url.startswith("http"):
+            self.annotated_url = get_presigned_url(self.annotated_url)
+        return self
+
 
 class InspectionOut(BaseModel):
     id: int
@@ -55,12 +64,14 @@ class InspectionBrief(BaseModel):
     decision: str | None
     contamination_score: float | None
     created_at: datetime
+    media: list[MediaOut] = []
 
     model_config = {"from_attributes": True}
 
 
 class InspectionStatusOut(BaseModel):
-    inspection_id: str
+    id: int
+    inspection_uid: str
     status: str
 
 

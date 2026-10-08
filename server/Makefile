@@ -30,7 +30,7 @@ seed:
 	.venv/bin/python seed.py
 
 dev:
-	.venv/bin/uvicorn app.main:app --reload --port 8000
+	.venv/bin/uvicorn app.main:app --host 0.0.0.0 --reload --port 8000
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
