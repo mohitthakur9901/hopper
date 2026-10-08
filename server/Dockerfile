@@ -1,21 +1,23 @@
-FROM python:3.12-slim AS base
+FROM python:3.12-slim
 
 WORKDIR /app
+ENV PYTHONPATH=/app
+
 
 # System deps for OpenCV / headless rendering
-# RUN apt-get update && apt-get install -y --no-install-recommends \
-#     libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 curl \
-#     && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python deps (cached layer)
+# Install CPU-only PyTorch FIRST (avoids downloading ~1.3GB of CUDA libs)
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# Install remaining Python deps
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
-
-# Download YOLO model if not present
-RUN python -c "from ultralytics import YOLO; YOLO('yolov8n.pt')" || true
 
 EXPOSE 8000
 
