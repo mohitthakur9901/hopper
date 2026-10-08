@@ -1,0 +1,52 @@
+
+
+services:
+  # ── PostgreSQL ─────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hopper
+      POSTGRES_PASSWORD: hopper_pass
+      POSTGRES_DB: hopperaudit
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hopper -d hopperaudit"]
+      interval: 5s
+      retries: 5
+
+  # ── Floci (S3-compatible local storage) ────────────────
+  floci:
+    image: floci/floci:latest
+    ports:
+      - "4566:4566"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data
+    environment:
+      FLOCI_STORAGE_MODE: hybrid
+
+  # ── FastAPI Server ─────────────────────────────────────
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://hopper:hopper_pass@db:5432/hopperaudit
+      S3_ENDPOINT_URL: http://floci:4566
+    depends_on:
+      db:
+        condition: service_healthy
+      floci:
+        condition: service_started
+    volumes:
+      - .:/app  # hot-reload in dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  pgdata:
+

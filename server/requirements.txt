@@ -1,0 +1,27 @@
+# FastAPI & Server
+fastapi>=0.115
+uvicorn[standard]>=0.34
+python-multipart>=0.0.20
+
+# Database
+sqlalchemy>=2.0
+psycopg[binary]>=3.2.10
+alembic>=1.14
+
+# Auth
+python-jose[cryptography]>=3.3
+passlib[bcrypt]>=1.7
+bcrypt>=4.2
+
+# AI / Computer Vision
+ultralytics>=8.3
+opencv-python-headless>=4.10
+Pillow>=10.0
+
+# Cloud Storage (S3-compatible, can use local for dev)
+boto3>=1.35
+
+# Utils
+python-dotenv>=1.0
+pydantic[email]>=2.10
+pydantic-settings>=2.6
