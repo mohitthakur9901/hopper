@@ -7,6 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": "hopper",
     "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#208AEF"
+    },
     "ios": {
       "icon": "./assets/expo.icon"
     },

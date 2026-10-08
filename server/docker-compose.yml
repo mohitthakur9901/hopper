@@ -1,5 +1,3 @@
-
-
 services:
   # ── PostgreSQL ─────────────────────────────────────────
   db:
@@ -17,16 +15,40 @@ services:
       interval: 5s
       retries: 5
 
-  # ── Floci (S3-compatible local storage) ────────────────
-  floci:
-    image: floci/floci:latest
+  # ── LocalStack (S3-compatible local storage) ───────────
+  localstack:
+    image: localstack/localstack:latest
     ports:
       - "4566:4566"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./data:/app/data
     environment:
-      FLOCI_STORAGE_MODE: hybrid
+      SERVICES: s3
+      DEFAULT_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    volumes:
+      - localstack_data:/var/lib/localstack
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/health | grep -q '\"s3\": \"available\"' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── S3 bucket initializer ──────────────────────────────
+  create-bucket:
+    image: amazon/aws-cli:latest
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: >
+      /bin/sh -c "
+        aws --endpoint-url=http://localstack:4566 s3 mb s3://hopperaudit-media || true;
+        echo 'Bucket ready';
+      "
 
   # ── FastAPI Server ─────────────────────────────────────
   api:
@@ -37,16 +59,18 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql+psycopg://hopper:hopper_pass@db:5432/hopperaudit
-      S3_ENDPOINT_URL: http://floci:4566
+      S3_ENDPOINT_URL: http://localstack:4566
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
     depends_on:
       db:
         condition: service_healthy
-      floci:
-        condition: service_started
+      localstack:
+        condition: service_healthy
     volumes:
       - .:/app  # hot-reload in dev
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   pgdata:
-
+  localstack_data:

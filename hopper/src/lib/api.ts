@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
-import { DashboardStats, Inspection, Station, TokenResponse, User } from './types';
+import { DashboardStats, Inspection, TokenResponse, User } from './types';
 
 // Fallback base URL depending on device platform
 const DEFAULT_BASE_URL =

@@ -270,7 +270,7 @@ def get_inspection(
     inspection = (
         db.query(Inspection)
         .options(joinedload(Inspection.media).joinedload(Media.detections))
-        .filter(Inspection.id == inspection_id)
+        .filter(Inspection.id == inspection_id, Inspection.user_id == current_user.id)
         .first()
     )
     if not inspection:
@@ -290,7 +290,7 @@ def list_inspections(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    q = db.query(Inspection).options(joinedload(Inspection.media))
+    q = db.query(Inspection).options(joinedload(Inspection.media)).filter(Inspection.user_id == current_user.id)
 
     if decision:
         q = q.filter(Inspection.decision == decision.upper())
@@ -309,7 +309,7 @@ def get_dashboard_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    q = db.query(Inspection).filter(Inspection.status == "COMPLETED")
+    q = db.query(Inspection).filter(Inspection.status == "COMPLETED", Inspection.user_id == current_user.id)
 
 
     total = q.count()
@@ -326,7 +326,7 @@ def get_dashboard_stats(
         db.query(Detection.category, func.count(Detection.id).label("cnt"))
         .join(Media)
         .join(Inspection)
-        .filter(Inspection.status == "COMPLETED")
+        .filter(Inspection.status == "COMPLETED", Inspection.user_id == current_user.id)
         .group_by(Detection.category)
         .order_by(func.count(Detection.id).desc())
         .first()

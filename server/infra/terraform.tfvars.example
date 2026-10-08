@@ -1,0 +1,13 @@
+aws_region  = "us-east-1"
+project_name = "hopperaudit"
+environment  = "prod"
+
+# ── Secrets (override via CLI or env vars in CI/CD) ──────────
+# db_password         = "CHANGE_ME"
+# secret_key          = "CHANGE_ME"
+# ultralytics_api_key = ""
+
+# ── Scaling ──────────────────────────────────────────────────
+api_cpu       = 1024   # 1 vCPU
+api_memory    = 2048   # 2 GB (needed for YOLO inference)
+desired_count = 1

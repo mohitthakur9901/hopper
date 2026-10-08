@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View,TouchableOpacity, ScrollView } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
